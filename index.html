@@ -1055,7 +1055,7 @@ function viewFirmas(){
   h+='<p class="small">Constancia: la firma del evaluado indica que conoció el contenido y el resultado de la evaluación. No implica aceptación. Si el evaluado se niega a firmar, se deja constancia con la firma de un testigo. Confirme con su asesor jurídico el uso de la firma en pantalla.</p>';
   h+='<div class="card"><button class="btn pri" data-act="pdf" type="button" style="width:100%">Generar PDF con toda la información</button><button class="btn" data-act="dljson" type="button" style="width:100%;margin-top:8px">Guardar evaluación (.json)</button><p class="small" style="margin:8px 0 0">El archivo .json permite abrir y continuar esta evaluación después, desde Inicio.</p></div>';
   h+=mailCard();
-  h+='<div class="card"><button class="btn danger" data-act="home" type="button" style="width:100%">Terminar y volver al inicio</button></div>';
+  h+='<div class="card"><button class="btn danger" data-act="home" type="button" style="width:100%">Terminar y volver al inicio</button><button class="btn" data-act="delcur" type="button" style="width:100%;margin-top:8px;color:var(--bad);border-color:var(--bad)">Eliminar esta evaluación</button><p class="small" style="margin:8px 0 0">Borra la evaluación del historial de este dispositivo y de la nube. No se puede deshacer; descargue antes el .json si quiere conservar una copia.</p></div>';
   return h;
 }
 
@@ -1625,6 +1625,7 @@ document.addEventListener('click',e=>{
   }
   if(act==='tojefe'){S.mode='jefe';autosave();go('A');return}
   if(act==='help'){showHelp();return}
+  if(act==='delcur'){const id=S.id;const nm=(S.datos&&S.datos.nombre)||'sin nombre';confirmBox('¿Eliminar la evaluación de «'+nm+'»? Se borra del historial y de la nube. No se puede deshacer.','Sí, eliminar',()=>{lsSet(K_LIST,(lsGet(K_LIST)||[]).filter(y=>y.id!==id));cloudTomb(id);S=newState();lsSet(K_DRAFT,S);view='home';render();window.scrollTo(0,0);toast('Evaluación eliminada.')});return}
   if(act==='home'){lsSet(K_DRAFT,S);view='home';render();window.scrollTo(0,0);return}
   if(act==='new'){S=newState();view='form';step='datos';autosave();render();window.scrollTo(0,0);return}
   if(act==='resume'){const d=lsGet(K_DRAFT);if(d){S=d;view='form';step=steps()[0][0];render()}return}
