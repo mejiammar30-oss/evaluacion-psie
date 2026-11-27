@@ -25,6 +25,8 @@ h1,h2,h3{margin:0;text-wrap:balance;letter-spacing:-.01em;line-height:1.2}
 .top .ttl b{display:block;font-size:14px;line-height:1.15}
 .top .ttl span{font-size:12px;color:var(--muted)}
 .pill{border:1px solid var(--line);background:var(--cream);border-radius:20px;padding:6px 12px;font-size:14px;font-weight:700;min-height:36px}
+.pill#userBtn::before{content:'';display:inline-block;width:9px;height:9px;border-radius:50%;background:#9a9a9a;margin-right:6px;vertical-align:0}
+.pill#userBtn[data-st=ok]::before{background:#2e7d32}.pill#userBtn[data-st=pend]::before,.pill#userBtn[data-st=sync]::before{background:#d49a00}.pill#userBtn[data-st=err]::before{background:#c62828}
 .pill.on{background:var(--dark);color:#fff;border-color:var(--dark)}
 .pill[hidden]{display:none}
 @media(max-width:440px){#homeBtn .tx{display:none}#homeBtn{padding:6px 10px}}
@@ -70,11 +72,12 @@ main{max-width:1240px;margin:0 auto;padding:14px 14px 110px}
 .note{font-size:14px;color:var(--muted);margin:0 0 10px}
 .grid{display:grid;grid-template-columns:1fr;gap:10px}
 @media(min-width:560px){.grid.two{grid-template-columns:1fr 1fr}}
-#lock{position:fixed;inset:0;z-index:100;background:var(--cream);display:grid;place-items:center;padding:20px;overflow:auto}
+#lock,#clogin{position:fixed;inset:0;z-index:100;background:var(--cream);display:grid;place-items:center;padding:20px;overflow:auto}
 .lockbox{width:100%;max-width:380px;background:#fff;border:1px solid var(--line);border-top:4px solid var(--gold);border-radius:6px;padding:24px 20px;text-align:center;box-shadow:0 2px 10px rgba(31,31,31,.12)}
 .lockbox img{height:54px;width:auto;border-radius:3px;margin-bottom:12px}
 .lockbox h2{font-size:18px;text-transform:uppercase;letter-spacing:.02em;margin-bottom:6px}
 .lockbox input{text-align:center;letter-spacing:.2em;font-size:18px;margin:12px 0 4px}
+.lockbox input[type=email],.lockbox input[type=text],#clogin input[type=password]{letter-spacing:normal;font-size:16px;text-align:left}
 .lockbox .err{min-height:20px;color:var(--bad);font-size:14px;margin:4px 0 8px}
 body.locked .top,body.locked .steps,body.locked main,body.locked .bar{visibility:hidden}
 .hk{order:4}
@@ -122,7 +125,7 @@ body.locked .top,body.locked .steps,body.locked main,body.locked .bar{visibility
 }
 @media(min-width:1400px){.grid.two{grid-template-columns:repeat(4,1fr)}}
 label.f{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:3px}
-input[type=text],input[type=date],input[type=number],select,textarea{width:100%;font:inherit;font-size:16px;color:var(--ink);background:#fff;border:1px solid #bdb08a;border-radius:8px;padding:10px;min-height:44px}
+input[type=text],input[type=email],input[type=password],input[type=date],input[type=number],select,textarea{width:100%;font:inherit;font-size:16px;color:var(--ink);background:#fff;border:1px solid #bdb08a;border-radius:8px;padding:10px;min-height:44px}
 textarea{min-height:76px;resize:vertical}
 input:focus,select:focus,textarea:focus,button:focus-visible{outline:3px solid #c9a94a;outline-offset:1px}
 .item{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px}
@@ -214,6 +217,7 @@ table.t td.c{text-align:center}
   <img src="data:image/jpeg;base64,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" alt="PSIE Ingeniería y Desarrollo">
   <div class="ttl"><b>Evaluación de desempeño</b><span>TH_EVA_01 · versión 04</span></div>
   <button class="pill" id="homeBtn" data-act="home" type="button" hidden aria-label="Volver al inicio"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg><span class="tx"> Inicio</span></button>
+  <button class="pill" id="userBtn" data-act="cl_menu" type="button" hidden aria-label="Mi cuenta"><span class="tx"></span></button>
   <button class="pill" id="modeBtn" data-act="mode" type="button">Jefe</button>
   <button class="icon" data-act="help" type="button" aria-label="Instrucciones">?</button>
 </div>
@@ -710,9 +714,10 @@ const steps=()=>S.mode==='colab'?STEPS_C:STEPS_J;
 
 /* =================== almacenamiento local =================== */
 const K_DRAFT='psie_eval_v04_borrador', K_LIST='psie_eval_v04_guardadas';
+var CLOUD=null,SES=null,CKEYS=null;
 let storageOk=true;
 function lsGet(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){storageOk=false;return null}}
-function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){storageOk=false;return false}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){storageOk=false;return false}if(CLOUD&&CKEYS&&CKEYS[k])cloudNote(k);return true}
 /* ---- perfiles de cargo adicionales (guardados en este dispositivo) ---- */
 const K_CARGOS='psie_eval_v04_cargos';
 let CARGOS=CARGOS_BASE.slice(), CGEDIT=null, CGPICK=false;
@@ -861,7 +866,7 @@ function viewHome(){
   h+='<section class="hs"><h2 class="lbl">Evaluaciones guardadas</h2><div class="list">';
   if(!list.length)h+='<p class="mut" style="margin:0">Aún no hay evaluaciones guardadas.</p>';
   list.slice().reverse().forEach(e=>{const c=compute(e);
-    h+='<div class="li"><div class="nm"><b>'+esc(e.datos.nombre||'Sin nombre')+'</b><span class="small">'+esc(e.datos.cargo||'')+' · '+esc(fmtD(e.datos.fecha))+' · '+(c.final?esc(c.final)+' ('+f2(c.total)+')':'sin resultado')+'</span></div>'+
+    h+='<div class="li"><div class="nm"><b>'+esc(e.datos.nombre||'Sin nombre')+'</b><span class="small">'+esc(e.datos.cargo||'')+' · '+esc(fmtD(e.datos.fecha))+(SES&&SES.rol==='admin'&&e.ownerNombre?' · '+esc(e.ownerNombre):'')+' · '+(c.final?esc(c.final)+' ('+f2(c.total)+')':'sin resultado')+'</span></div>'+
        '<div class="btnrow" style="flex:0 0 auto"><button class="btn sm" data-act="open" data-id="'+e.id+'" type="button">Abrir</button><button class="btn sm danger" data-act="del" data-id="'+e.id+'" type="button">Borrar</button></div></div>'});
   h+='</div><div class="tl">'+(list.length?'<button class="linkbtn" data-act="csvall" type="button">Descargar todas (CSV)</button>':'')+
      '<button class="linkbtn" data-act="bkp" type="button">Copia de seguridad (.json)</button><label class="linkbtn" for="imp" style="cursor:pointer">Cargar evaluaciones o copia de seguridad (.json)</label><input id="imp" type="file" accept=".json,application/json" multiple hidden></div></section>';
@@ -1461,7 +1466,7 @@ function lockShow(){
   $('#lkGo').onclick=lockTry;
   $('#lkForgot').onclick=()=>confirmBox('Si olvidó la clave, solo se puede entrar borrando TODOS los datos guardados en este dispositivo (evaluaciones, borrador, perfiles de cargo y la clave). ¿Borrar y entrar?','Borrar y entrar',lockWipe);
 }
-function lockOff(){const d=$('#lock');if(d)d.remove();document.body.classList.remove('locked')}
+function lockOff(){const d=$('#lock');if(d)d.remove();if(!$('#clogin'))document.body.classList.remove('locked')}
 async function lockTry(){
   const cfg=pinCfg();if(!cfg){lockOff();return}
   const err=$('#lkErr'),inp=$('#lkPin'),now=Date.now();
@@ -1486,6 +1491,7 @@ document.addEventListener('visibilitychange',()=>{
 document.addEventListener('click',e=>{
   const t=e.target.closest('[data-act]');if(!t)return;
   const act=t.dataset.act;
+  if(act.indexOf('cl_')===0){cloudAct(act,t);return}
   if(act==='hero'){heroGo(+t.dataset.i);return}
   if(act==='cgmenu'){modal('<div class="row2" style="margin-bottom:8px"><h2 style="font-size:18px">Perfiles de cargo</h2><button class="btn" data-act="closemodal" type="button" style="min-height:38px">Cerrar</button></div>'+cargoCard().replace('class="card"','style="border:0;padding:0"'));return}
   if(act==='pinmenu'){modal('<div class="row2" style="margin-bottom:8px"><h2 style="font-size:18px">Clave de acceso</h2><button class="btn" data-act="closemodal" type="button" style="min-height:38px">Cerrar</button></div>'+pinCard().replace('class="card hk"','style="border:0;padding:0"'));return}
@@ -1545,7 +1551,7 @@ document.addEventListener('click',e=>{
   if(act==='resume'){const d=lsGet(K_DRAFT);if(d){S=d;view='form';step=steps()[0][0];render()}return}
   if(act==='demo'){loadExample();view='form';step='res';render();window.scrollTo(0,0);toast('Ejemplo con datos ficticios cargado.');return}
   if(act==='open'){const l=lsGet(K_LIST)||[];const x=l.find(y=>y.id===t.dataset.id);if(x){S=x;view='form';step='datos';render()}return}
-  if(act==='del'){const id=t.dataset.id;confirmBox('¿Borrar esta evaluación guardada? No se puede deshacer.','Borrar',()=>{lsSet(K_LIST,(lsGet(K_LIST)||[]).filter(y=>y.id!==id));render()});return}
+  if(act==='del'){const id=t.dataset.id;confirmBox('¿Borrar esta evaluación guardada? No se puede deshacer.','Borrar',()=>{lsSet(K_LIST,(lsGet(K_LIST)||[]).filter(y=>y.id!==id));cloudTomb(id);render()});return}
   if(act==='prev'){stepMove(-1);return}
   if(act==='next'){stepMove(1);return}
   if(act==='gostep'){go(t.dataset.s);return}
@@ -1737,6 +1743,315 @@ document.addEventListener('change',e=>{
 });
 
 /* =================== inicio =================== */
+/* ===== Nube (Supabase): inicio de sesión, usuarios y sincronización ===== */
+const SB_URL='https://fjslkikbpmozathdwogw.supabase.co',SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqc2xraWticG1vemF0aGR3b2d3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU3ODcxMzgsImV4cCI6MjExMTM2MzEzOH0.H0hOYwdb_uEbGeWbsjLAANevPvP0yXPEAAilNiAfgqw';
+CLOUD=(SB_URL&&SB_URL.indexOf('__')!==0&&SB_KEY)?{pulling:false,timer:null,st:'off',busy:false,last:0,again:false}:null;
+const K_SESS='psie_eval_v04_sesion',K_SYNC='psie_eval_v04_sync',K_CMOD='psie_eval_v04_cmod',K_UID='psie_eval_v04_uid';
+CKEYS={};CKEYS[K_LIST]='evals';CKEYS[K_CARGOS]='cargos';CKEYS[K_LUGARES]='lugares';CKEYS[K_MAIL]='correos';
+const CFGKEY={cargos:K_CARGOS,lugares:K_LUGARES,correos:K_MAIL};
+const ST_TXT={ok:'Sincronizado',pend:'Cambios pendientes de enviar',off:'Sin conexión. Se enviará al volver la señal',err:'No se pudo sincronizar',sync:'Sincronizando…'};
+const ROL_TXT={admin:'Administrador',evaluador:'Evaluador'};
+function SY(){const s=lsGet(K_SYNC)||{};return {ev:s.ev||{},cfg:s.cfg||{},del:s.del||[]}}
+function cmodGet(){return lsGet(K_CMOD)||{}}
+function cloudNote(k){ /* se llama cada vez que se guarda algo que debe viajar a la nube */
+  if(!CLOUD||!SES||CLOUD.pulling)return;
+  if(CKEYS[k]!=='evals'){const m=cmodGet();m[CKEYS[k]]=Date.now();try{localStorage.setItem(K_CMOD,JSON.stringify(m))}catch(e){}}
+  cloudSched();
+}
+function cloudTomb(id){if(!CLOUD||!SES)return;const sy=SY();if(sy.ev[id]!==undefined&&!sy.del.includes(id))sy.del.push(id);delete sy.ev[id];lsSet(K_SYNC,sy);cloudSched()}
+function cloudSched(){if(!CLOUD||!SES)return;setSt('pend');clearTimeout(CLOUD.timer);CLOUD.timer=setTimeout(()=>cloudSync(false),1500)}
+function setSt(s){if(!CLOUD)return;CLOUD.st=s;const b=$('#userBtn');if(b){b.hidden=!SES;b.dataset.st=s;b.querySelector('.tx').textContent=SES?(SES.nombre||SES.email).split(' ')[0]:''}const l=$('#clSt');if(l)l.textContent=ST_TXT[s]||''}
+function sbH(tok){return {apikey:SB_KEY,Authorization:'Bearer '+(tok||SB_KEY),'Content-Type':'application/json'}}
+async function sbReq(path,opt){const r=await fetch(SB_URL+path,opt);let d=null;try{d=await r.json()}catch(e){}return {ok:r.ok,status:r.status,data:d}}
+function sesSave(){try{localStorage.setItem(K_SESS,JSON.stringify(SES))}catch(e){}}
+async function tok(){
+  if(!SES)return null;
+  if(Date.now()<SES.exp-60000)return SES.access;
+  try{
+    const r=await sbReq('/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:sbH(),body:JSON.stringify({refresh_token:SES.refresh})});
+    if(r.ok&&r.data&&r.data.access_token){SES.access=r.data.access_token;SES.refresh=r.data.refresh_token;SES.exp=Date.now()+r.data.expires_in*1000;sesSave();return SES.access}
+    if(r.status>=400&&r.status<500){cloudExpired();return null}
+  }catch(e){}
+  return null;
+}
+async function rest(m,p,body,pref){
+  const t=await tok();if(!t)throw new Error('off');
+  const h=sbH(t);if(pref)h.Prefer=pref;
+  const r=await sbReq('/rest/v1/'+p,{method:m,headers:h,body:body===undefined?undefined:JSON.stringify(body)});
+  if(!r.ok){const er=new Error((r.data&&(r.data.message||r.data.msg))||('HTTP '+r.status));er.status=r.status;throw er}
+  return r.data;
+}
+async function fnCall(accion,body){
+  const t=await tok();
+  const r=await sbReq('/functions/v1/usuarios',{method:'POST',headers:sbH(t),body:JSON.stringify(Object.assign({accion:accion},body||{}))});
+  return r;
+}
+function cloudDirty(){
+  const sy=SY(),cm=cmodGet();
+  if(sy.del.length)return true;
+  if((lsGet(K_LIST)||[]).some(e=>sy.ev[e.id]===undefined||(e.modificado||0)>sy.ev[e.id]))return true;
+  return Object.keys(CFGKEY).some(c=>(cm[c]||0)>(sy.cfg[c]||0));
+}
+async function cPull(){
+  const sy=SY(),cm=cmodGet();
+  const rows=await rest('GET','evaluaciones?select=id,modificado,owner_nombre,data&order=modificado.asc');
+  const cfg=await rest('GET','config?select=clave,valor,modificado');
+  CLOUD.pulling=true;
+  try{
+    const l=lsGet(K_LIST)||[],m={},order=[],srv={};
+    l.forEach(e=>{m[e.id]=e;order.push(e.id)});
+    rows.forEach(r=>{
+      srv[r.id]=1;if(sy.del.includes(r.id))return;
+      const e=r.data;if(!e||!e.id)return;
+      if(r.owner_nombre&&!e.ownerNombre)e.ownerNombre=r.owner_nombre;
+      const loc=m[r.id];
+      if(!loc){m[r.id]=e;order.push(r.id);sy.ev[r.id]=r.modificado}
+      else if(r.modificado>(loc.modificado||0)){m[r.id]=e;sy.ev[r.id]=r.modificado}
+      else if((loc.modificado||0)===r.modificado){sy.ev[r.id]=r.modificado}
+    });
+    const keep=[];
+    order.forEach(id=>{
+      if(!m[id])return;
+      if(!srv[id]&&sy.ev[id]!==undefined&&(m[id].modificado||0)<=sy.ev[id]){delete sy.ev[id];return} /* borrada por otra persona */
+      keep.push(m[id]);
+    });
+    lsSet(K_LIST,keep);
+    cfg.forEach(c=>{
+      const lk=CFGKEY[c.clave];if(!lk)return;
+      if(c.modificado>(cm[c.clave]||0)){
+        lsSet(lk,c.valor);cm[c.clave]=c.modificado;sy.cfg[c.clave]=c.modificado;
+        if(c.clave==='correos')MAILS=null;if(c.clave==='cargos')refreshCargos();
+      }else if(c.modificado===(cm[c.clave]||0)){sy.cfg[c.clave]=c.modificado}
+    });
+    try{localStorage.setItem(K_CMOD,JSON.stringify(cm))}catch(e){}
+  }finally{CLOUD.pulling=false}
+  lsSet(K_SYNC,sy);
+}
+async function cPush(){
+  const sy=SY(),cm=cmodGet();
+  for(const id of sy.del.slice()){
+    await rest('DELETE','evaluaciones?id=eq.'+encodeURIComponent(id));
+    sy.del=sy.del.filter(x=>x!==id);lsSet(K_SYNC,sy);
+  }
+  const l=lsGet(K_LIST)||[];let changed=false;
+  for(const e of l){
+    const mod=e.modificado||0;
+    if(sy.ev[e.id]!==undefined&&mod<=sy.ev[e.id])continue;
+    if(!e.ownerNombre){e.ownerNombre=SES.nombre||SES.email;changed=true}
+    await rest('POST','evaluaciones?on_conflict=id',[{id:e.id,owner_nombre:e.ownerNombre,nombre:(e.datos&&e.datos.nombre)||'',cargo:(e.datos&&e.datos.cargo)||'',fecha:(e.datos&&e.datos.fecha)||'',modificado:mod,data:e}],'resolution=merge-duplicates,return=minimal');
+    sy.ev[e.id]=mod;lsSet(K_SYNC,sy);
+  }
+  if(changed){CLOUD.pulling=true;try{lsSet(K_LIST,l)}finally{CLOUD.pulling=false}}
+  for(const c of Object.keys(CFGKEY)){
+    const lm=cm[c]||0;if(lm<=(sy.cfg[c]||0))continue;
+    const v=lsGet(CFGKEY[c]);
+    await rest('POST','config?on_conflict=clave',[{clave:c,valor:v===null?[]:v,modificado:lm,updated_at:new Date().toISOString()}],'resolution=merge-duplicates,return=minimal');
+    sy.cfg[c]=lm;lsSet(K_SYNC,sy);
+  }
+}
+async function cloudSync(manual){
+  if(!CLOUD||!SES)return;
+  if(CLOUD.busy){CLOUD.again=true;return}
+  CLOUD.busy=true;setSt('sync');
+  try{
+    await cPull();await cPush();
+    CLOUD.last=Date.now();setSt('ok');
+    if(manual)toast('Sincronizado con la nube.');
+    if(view==='home')keepScroll(render);
+  }catch(e){
+    const off=(e&&e.message==='off')||e instanceof TypeError;
+    setSt(off?'off':'err');
+    if(manual)toast(off?'Sin conexión. Se enviará cuando vuelva la señal.':'No se pudo sincronizar: '+(e&&e.message||''),5000);
+  }finally{CLOUD.busy=false;if(CLOUD.again){CLOUD.again=false;cloudSched()}}
+}
+function cloudWipeLocal(){
+  [K_DRAFT,K_LIST,K_CARGOS,K_MAIL,K_LUGARES,K_SYNC,K_CMOD].forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});
+  S=newState();MAILS=null;refreshCargos();view='home';
+}
+function cloudExpired(){
+  if(!SES)return;
+  try{localStorage.removeItem(K_SESS)}catch(e){}
+  SES=null;setSt('off');loginShow('Su sesión venció. Vuelva a entrar; sus datos de este dispositivo se conservan.');
+}
+function cloudStart(ses){
+  const prev=(()=>{try{return localStorage.getItem(K_UID)}catch(e){return null}})();
+  if(prev&&prev!==ses.uid)cloudWipeLocal();
+  try{localStorage.setItem(K_UID,ses.uid)}catch(e){}
+  SES=ses;sesSave();
+  const g=$('#clogin');if(g)g.remove();
+  if(!$('#lock'))document.body.classList.remove('locked');
+  setSt('sync');render();cloudSync(false);
+}
+function loginShow(msg){
+  if(!CLOUD||$('#clogin'))return;
+  document.body.classList.add('locked');
+  const d=document.createElement('div');d.id='clogin';
+  d.innerHTML='<div class="lockbox" role="dialog" aria-modal="true" aria-labelledby="clT"><img src="'+LOGO+'" alt="PSIE Ingeniería y Desarrollo"><h2 id="clT">Ingreso</h2><p class="small" style="margin:0 0 6px">Evaluación de desempeño · TH_EVA_01</p><div id="clBody"></div></div>';
+  document.body.appendChild(d);
+  loginBody(msg||'','login');
+  fnCall('estado').then(r=>{if(r.ok&&r.data&&r.data.hayAdmin===false)loginBody('','setup')}).catch(()=>{});
+}
+function loginBody(msg,mode){
+  const b=$('#clBody');if(!b)return;
+  if(mode==='setup'){
+    b.innerHTML='<p class="small" style="margin:8px 0">Configuración inicial: cree la cuenta del <b>administrador</b>.</p>'+
+     '<input type="text" id="clN" autocomplete="name" placeholder="Nombre completo">'+
+     '<input type="email" id="clE" autocomplete="username" placeholder="Correo">'+
+     '<input type="password" id="clP" autocomplete="new-password" placeholder="Contraseña (mínimo 8 caracteres)">'+
+     '<input type="password" id="clP2" autocomplete="new-password" placeholder="Repita la contraseña"><div class="err" id="clErr" role="alert">'+esc(msg)+'</div>'+
+     '<button class="btn pri" id="clGo" type="button" style="width:100%">Crear administrador</button><button class="linkbtn" id="clBack" type="button" style="margin-top:8px">Ya tengo cuenta</button>';
+    $('#clGo').onclick=loginSetup;$('#clBack').onclick=()=>loginBody('','login');
+  }else{
+    b.innerHTML='<input type="email" id="clE" autocomplete="username" placeholder="Correo" value="'+esc((lsGet('psie_eval_v04_ultimo')||{}).e||'')+'">'+
+     '<input type="password" id="clP" autocomplete="current-password" placeholder="Contraseña"><div class="err" id="clErr" role="alert">'+esc(msg)+'</div>'+
+     '<button class="btn pri" id="clGo" type="button" style="width:100%">Entrar</button>';
+    $('#clGo').onclick=loginGo;
+    ['clE','clP'].forEach(i=>$('#'+i).addEventListener('keydown',e=>{if(e.key==='Enter')loginGo()}));
+    setTimeout(()=>{const f=$('#clE').value?$('#clP'):$('#clE');if(f)f.focus()},60);
+  }
+}
+async function loginGo(){
+  const e=($('#clE').value||'').trim().toLowerCase(),p=$('#clP').value||'',er=$('#clErr'),bt=$('#clGo');
+  if(!e||!p){er.textContent='Escriba el correo y la contraseña.';return}
+  bt.disabled=true;er.textContent='Entrando…';
+  try{
+    const r=await cloudLoginReq(e,p);
+    if(r.err){er.textContent=r.err;bt.disabled=false;return}
+    lsSet('psie_eval_v04_ultimo',{e:e});
+    cloudStart(r.ses);
+  }catch(x){er.textContent='Sin conexión. Se necesita internet para entrar la primera vez.';bt.disabled=false}
+}
+async function cloudLoginReq(email,pass){
+  const r=await sbReq('/auth/v1/token?grant_type=password',{method:'POST',headers:sbH(),body:JSON.stringify({email:email,password:pass})});
+  if(!r.ok)return {err:r.status===400?'Correo o contraseña incorrectos.':'No se pudo iniciar sesión ('+r.status+').'};
+  const d=r.data,ses={access:d.access_token,refresh:d.refresh_token,exp:Date.now()+d.expires_in*1000,uid:d.user.id,email:d.user.email};
+  const pr=await sbReq('/rest/v1/profiles?id=eq.'+ses.uid+'&select=nombre,rol,activo',{headers:sbH(ses.access)});
+  const p=pr.ok&&pr.data&&pr.data[0];
+  if(!p)return {err:'Este usuario no tiene perfil. Pida al administrador que lo cree.'};
+  if(!p.activo)return {err:'Su usuario está desactivado. Consulte al administrador.'};
+  ses.nombre=p.nombre||ses.email;ses.rol=p.rol;
+  return {ses:ses};
+}
+async function loginSetup(){
+  const n=($('#clN').value||'').trim(),e=($('#clE').value||'').trim().toLowerCase(),p=$('#clP').value||'',p2=$('#clP2').value||'',er=$('#clErr'),bt=$('#clGo');
+  if(n.length<3){er.textContent='Escriba el nombre completo.';return}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)){er.textContent='Correo inválido.';return}
+  if(p.length<8){er.textContent='La contraseña debe tener mínimo 8 caracteres.';return}
+  if(p!==p2){er.textContent='Las contraseñas no coinciden.';return}
+  bt.disabled=true;er.textContent='Creando…';
+  try{
+    const r=await fnCall('bootstrap',{email:e,password:p,nombre:n});
+    if(!r.ok){er.textContent=(r.data&&r.data.error)||'No se pudo crear.';bt.disabled=false;return}
+    const l=await cloudLoginReq(e,p);
+    if(l.err){er.textContent=l.err;bt.disabled=false;return}
+    lsSet('psie_eval_v04_ultimo',{e:e});cloudStart(l.ses);toast('Administrador creado. Bienvenido.',4000);
+  }catch(x){er.textContent='Sin conexión.';bt.disabled=false}
+}
+function cloudInit(){
+  if(!CLOUD)return;
+  let s=null;try{s=JSON.parse(localStorage.getItem(K_SESS)||'null')}catch(e){}
+  if(s&&s.refresh&&s.uid){SES=s;setSt('sync');tok().then(t=>{if(SES&&(t||Date.now()<SES.exp))cloudSync(false);else if(SES)setSt('off')});}
+  else loginShow('');
+  setInterval(()=>cloudSync(false),60000);
+  window.addEventListener('online',()=>cloudSync(false));
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)cloudSync(false)});
+}
+/* ---- menú de la cuenta, usuarios y contraseña ---- */
+function clMenu(){
+  if(!SES)return;
+  modal('<div class="row2" style="margin-bottom:8px"><h2 style="font-size:18px">Mi cuenta</h2><button class="btn" data-act="closemodal" type="button" style="min-height:38px">Cerrar</button></div>'+
+   '<div class="card" style="margin:0 0 12px"><b>'+esc(SES.nombre||SES.email)+'</b><div class="small">'+esc(SES.email)+' · '+esc(ROL_TXT[SES.rol]||SES.rol)+'</div><div class="small" style="margin-top:6px">Estado: <span id="clSt">'+esc(ST_TXT[CLOUD.st]||'')+'</span></div>'+(CLOUD.last?'<div class="small">Última sincronización: '+esc(new Date(CLOUD.last).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'}))+'</div>':'')+'</div>'+
+   '<div class="btnrow" style="flex-direction:column;align-items:stretch"><button class="btn" data-act="cl_sync" type="button">Sincronizar ahora</button>'+
+   (SES.rol==='admin'?'<button class="btn" data-act="cl_users" type="button">Usuarios</button>':'')+
+   '<button class="btn" data-act="cl_pass" type="button">Cambiar mi contraseña</button><button class="btn danger" data-act="cl_out" type="button">Cerrar sesión</button></div>');
+}
+function clPassModal(){
+  modal('<div class="row2" style="margin-bottom:8px"><h2 style="font-size:18px">Cambiar contraseña</h2><button class="btn" data-act="closemodal" type="button" style="min-height:38px">Cerrar</button></div>'+
+   '<input type="password" id="npA" autocomplete="new-password" placeholder="Nueva contraseña (mínimo 8 caracteres)" style="width:100%;margin-bottom:8px"><input type="password" id="npB" autocomplete="new-password" placeholder="Repita la contraseña" style="width:100%"><div class="err" id="npE" role="alert" style="min-height:20px;color:var(--bad);font-size:14px;margin:6px 0"></div>'+
+   '<div class="btnrow"><button class="btn" data-act="closemodal" type="button">Cancelar</button><button class="btn pri" data-act="cl_passok" type="button">Guardar</button></div>');
+}
+async function clPassOk(){
+  const a=$('#npA').value||'',b=$('#npB').value||'',e=$('#npE');
+  if(a.length<8){e.textContent='Mínimo 8 caracteres.';return}
+  if(a!==b){e.textContent='No coinciden.';return}
+  try{const t=await tok();const r=await sbReq('/auth/v1/user',{method:'PUT',headers:sbH(t),body:JSON.stringify({password:a})});
+    if(!r.ok){e.textContent=(r.data&&(r.data.msg||r.data.message))||'No se pudo cambiar.';return}
+    closeModal();toast('Contraseña cambiada.',4000)}catch(x){e.textContent='Sin conexión.'}
+}
+function clOut(){
+  const go=()=>{
+    try{localStorage.removeItem(K_SESS)}catch(e){}
+    cloudWipeLocal();SES=null;closeModal();setSt('off');render();loginShow('');
+  };
+  if(cloudDirty())confirmBox('Hay cambios que todavía no se enviaron a la nube. Si cierra sesión ahora se pierden. ¿Cerrar sesión de todas formas?','Cerrar sesión',go);
+  else confirmBox('¿Cerrar sesión? Se borran los datos de este dispositivo; siguen guardados en la nube.','Cerrar sesión',go);
+}
+function genPass(){const c='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789',a=crypto.getRandomValues(new Uint8Array(10));return Array.from(a).map(x=>c[x%c.length]).join('')}
+let USERS=[];
+async function clUsers(msg){
+  modal('<div class="row2" style="margin-bottom:8px"><h2 style="font-size:18px">Usuarios</h2><button class="btn" data-act="closemodal" type="button" style="min-height:38px">Cerrar</button></div><p class="small">Cargando…</p>');
+  try{USERS=await rest('GET','profiles?select=id,email,nombre,rol,activo&order=creado.asc')}catch(e){modal('<p class="small">No se pudo cargar la lista ('+esc(e.message)+').</p><button class="btn" data-act="closemodal" type="button">Cerrar</button>');return}
+  clUsersDraw(msg||'');
+}
+function clUsersDraw(msg){
+  let h='<div class="row2" style="margin-bottom:8px"><h2 style="font-size:18px">Usuarios</h2><button class="btn" data-act="closemodal" type="button" style="min-height:38px">Cerrar</button></div>';
+  if(msg)h+='<p class="small" style="margin:0 0 8px"><b>'+esc(msg)+'</b></p>';
+  h+='<div class="card" style="margin:0 0 12px"><b>Nuevo usuario</b>'+
+   '<input type="text" id="nuN" placeholder="Nombre completo" autocomplete="off" style="width:100%;margin-top:8px"><input type="email" id="nuE" placeholder="Correo" autocomplete="off" style="width:100%;margin-top:8px">'+
+   '<div style="display:flex;gap:8px;margin-top:8px"><input type="text" id="nuP" placeholder="Contraseña temporal" autocomplete="off" value="'+esc(genPass())+'" style="flex:1"><select id="nuR" style="flex:0 0 130px"><option value="evaluador">Evaluador</option><option value="admin">Administrador</option></select></div>'+
+   '<div class="err" id="nuErr" role="alert" style="min-height:20px;color:var(--bad);font-size:14px;margin:6px 0"></div><button class="btn pri" data-act="cl_ucreate" type="button" style="width:100%">Crear usuario</button><p class="small" style="margin:6px 0 0">Anote la contraseña temporal y entréguela a la persona; luego puede cambiarla en «Mi cuenta».</p></div>';
+  USERS.forEach(u=>{
+    h+='<div class="li"><div class="nm"><b>'+esc(u.nombre||u.email)+'</b><span class="small">'+esc(u.email)+' · '+esc(ROL_TXT[u.rol])+(u.activo?'':' · <b>desactivado</b>')+'</span></div>'+
+     (u.id===SES.uid?'<span class="small">Usted</span>':'<div class="btnrow" style="flex:0 0 auto;flex-wrap:wrap"><button class="btn sm" data-act="cl_uact" data-id="'+u.id+'" type="button">'+(u.activo?'Desactivar':'Activar')+'</button><button class="btn sm" data-act="cl_urol" data-id="'+u.id+'" type="button">'+(u.rol==='admin'?'Pasar a evaluador':'Pasar a admin')+'</button><button class="btn sm" data-act="cl_upass" data-id="'+u.id+'" type="button">Contraseña</button><button class="btn sm danger" data-act="cl_udel" data-id="'+u.id+'" type="button">Eliminar</button></div>')+'</div>';
+  });
+  modal(h);
+}
+async function clUserAct(act,id){
+  const u=USERS.find(x=>x.id===id);if(!u)return;
+  try{
+    if(act==='cl_uact'){await rest('PATCH','profiles?id=eq.'+id,{activo:!u.activo},'return=minimal');await clUsers(u.activo?'Usuario desactivado.':'Usuario activado.');return}
+    if(act==='cl_urol'){await rest('PATCH','profiles?id=eq.'+id,{rol:u.rol==='admin'?'evaluador':'admin'},'return=minimal');await clUsers('Rol actualizado.');return}
+  }catch(e){clUsersDraw('No se pudo: '+e.message)}
+}
+async function clUserCreate(){
+  const n=($('#nuN').value||'').trim(),e=($('#nuE').value||'').trim().toLowerCase(),p=$('#nuP').value||'',r=$('#nuR').value,er=$('#nuErr');
+  if(n.length<3){er.textContent='Escriba el nombre.';return}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)){er.textContent='Correo inválido.';return}
+  if(p.length<8){er.textContent='La contraseña debe tener mínimo 8 caracteres.';return}
+  er.textContent='Creando…';
+  try{const x=await fnCall('crear',{email:e,password:p,nombre:n,rol:r});
+    if(!x.ok){er.textContent=(x.data&&x.data.error)||'No se pudo crear.';return}
+    await clUsers('Usuario creado: '+e+'. Contraseña temporal: '+p)}catch(x){er.textContent='Sin conexión.'}
+}
+function clUserPass(id){
+  const u=USERS.find(x=>x.id===id);if(!u)return;
+  modal('<div class="row2" style="margin-bottom:8px"><h2 style="font-size:18px">Nueva contraseña</h2><button class="btn" data-act="cl_users" type="button" style="min-height:38px">Volver</button></div><p class="small">'+esc(u.nombre||u.email)+'</p><input type="text" id="rpP" value="'+esc(genPass())+'" autocomplete="off" style="width:100%"><div class="err" id="rpE" role="alert" style="min-height:20px;color:var(--bad);font-size:14px;margin:6px 0"></div><button class="btn pri" data-act="cl_upassok" data-id="'+id+'" type="button" style="width:100%">Guardar contraseña</button>');
+}
+async function clUserPassOk(id){
+  const p=$('#rpP').value||'',e=$('#rpE');if(p.length<8){e.textContent='Mínimo 8 caracteres.';return}
+  try{const x=await fnCall('reset',{id:id,password:p});if(!x.ok){e.textContent=(x.data&&x.data.error)||'No se pudo.';return}await clUsers('Contraseña cambiada. Nueva contraseña: '+p)}catch(x){e.textContent='Sin conexión.'}
+}
+function clUserDel(id){
+  const u=USERS.find(x=>x.id===id);if(!u)return;
+  confirmBox('¿Eliminar a '+(u.nombre||u.email)+'? Si ya hizo evaluaciones no se puede eliminar: en ese caso use «Desactivar».','Eliminar',async()=>{
+    try{const x=await fnCall('eliminar',{id:id});await clUsers(x.ok?'Usuario eliminado.':'No se pudo eliminar: tiene evaluaciones. Use «Desactivar».')}catch(e){clUsers('Sin conexión.')}
+  });
+}
+function cloudAct(act,t){
+  const id=t.dataset.id;
+  if(act==='cl_menu')return clMenu();
+  if(act==='cl_sync'){cloudSync(true);return}
+  if(act==='cl_users')return clUsers();
+  if(act==='cl_pass')return clPassModal();
+  if(act==='cl_passok')return clPassOk();
+  if(act==='cl_out')return clOut();
+  if(act==='cl_ucreate')return clUserCreate();
+  if(act==='cl_upass')return clUserPass(id);
+  if(act==='cl_upassok')return clUserPassOk(id);
+  if(act==='cl_udel')return clUserDel(id);
+  if(act==='cl_uact'||act==='cl_urol')return clUserAct(act,id);
+}
+
 function boot(){
   setupDict();
   const h=(location.hash||'').replace('#','');
@@ -1747,6 +2062,7 @@ function boot(){
 }
 if(pinCfg())lockShow();
 boot();
+cloudInit();
 })();
 </script>
 </body>
