@@ -706,7 +706,7 @@ function newState(){return {v:4,id:uid(),creado:Date.now(),mode:'jefe',asistida:
   datos:{nombre:'',cc:'',cargo:'',ingreso:'',lugar:'',mina:'',contrato:'',jefe:'',cargoEv:'',desde:'',hasta:'',fecha:todayISO(),tipo:''},
   cargoSel:'',pesoManual:false,
   A:[0,1,2,3,4,5,6,7].map(()=>({fn:'',ind:'',res:'',a:null,j:null,peso:'',o:'',src:''})),
-  asc:{cargo:'',decision:'',just:'',form:''},
+  asc:{sel:'',cargo:'',decision:'',just:'',form:''},
   r:{}, cierre:{fort:'',mejorar:'',cap:'',acuerdo:'',coment:''},
   plan:[0,1,2,3].map(()=>({aspecto:'',accion:'',resp:'',limite:'',seg:'',cumplio:''})),
   firmas:{modo:'pantalla',evaluado:'',evaluador:'',gh:'',nombreEv:'',ccEv:'',nombreEr:'',cargoEr:'',nombreGh:'',fechaGh:'',testigoNombre:'',testigoCC:'',testigo:''}}}
@@ -960,11 +960,22 @@ function viewA(){
   let o='';
   if(jf||otroF){
     o+='<h2 class="sec" style="margin-top:26px">Labores de otro cargo (formación para ascenso)</h2>';
-    if(jf)o+='<p class="note">Úsela cuando el colaborador ejecuta labores de un cargo distinto al suyo y se está capacitando para un ascenso (hasta 3). Estas labores cuentan dentro de la Parte A: los pesos se reparten con las demás funciones y suman 100 %. Al final se registra la recomendación de ascenso.</p><button class="btn gold" data-act="addotro" type="button" style="width:100%;margin-bottom:12px">+ Agregar labor de otro cargo</button>'+(otroF?'<button class="btn danger" data-act="clearotro" type="button" style="width:100%;margin-bottom:12px">Quitar todas las labores de otro cargo</button>':'');
+    if(jf)o+='<p class="note">Úsela cuando el colaborador ejecuta labores de un cargo distinto al suyo y se está capacitando para un ascenso (hasta 3). Estas labores cuentan dentro de la Parte A: los pesos se reparten con las demás funciones y suman 100 %. Al final se registra la recomendación de ascenso.</p>'+pickOtroHTML()+'<button class="btn gold" data-act="addotro" type="button" style="width:100%;margin-bottom:12px">+ Agregar labor propia de otro cargo</button>'+(otroF?'<button class="btn danger" data-act="clearotro" type="button" style="width:100%;margin-bottom:12px">Quitar todas las labores de otro cargo</button>':'');
     o+=S.A.slice(A_OWN).map((r,k)=>{const i=k+A_OWN;return (jf&&!(r.fn||'').trim()&&i!==S._addIdx)?'':aCardHTML(i)}).join('');
     if(jf&&otroF)o+=ascHTML();
   }
   return h+cards+(cards?'':'<p class="note">Aún no hay funciones. Elija las del cargo o agregue una propia.</p>')+o;
+}
+function pickOtroHTML(){
+  const sel=(S.asc&&S.asc.sel)||'',cg=CARGOS.find(c=>c.cargo===sel);
+  const used=S.A.slice(A_OWN).filter(r=>(r.fn||'').trim()).length;
+  let h='<div class="pick"><label class="f" for="ascSel">Cargo al que aspira (elija el cargo para ver sus funciones)</label><select id="ascSel" data-bind="asc.sel"><option value="">Seleccione el cargo</option>'+cargoOpts(sel)+'</select>';
+  if(cg){
+    h+='<p class="note" style="margin:10px 0 0">Toque las funciones de ese cargo que el colaborador está ejecutando (máximo 3). Seleccionadas: <b>'+used+' de 3</b>.</p>';
+    cg.fn.forEach((f,i)=>{const on=S.A.slice(A_OWN).some(r=>r.src===cg.cargo+'#'+i);
+      h+='<button type="button" class="pf" data-act="pickotro" data-i="'+i+'" aria-pressed="'+on+'"'+((!on&&used>=3)?' disabled':'')+'><span class="bx">'+(on?'✓':'')+'</span><span>'+esc(f)+'</span></button>'});
+  }
+  return h+'</div>';
 }
 function ascHTML(){
   const a=S.asc||{},v=x=>esc(x||'');
@@ -1567,6 +1578,14 @@ document.addEventListener('click',e=>{
   if(act==='clearotro'){confirmBox('¿Quitar todas las labores de otro cargo? Se borran sus notas, observaciones y la recomendación de ascenso. Esta acción no se puede deshacer.','Quitar todas',()=>{S.A.slice(A_OWN).forEach(r=>Object.assign(r,{fn:'',ind:'',res:'',a:null,j:null,peso:'',o:'',src:''}));S.asc={cargo:'',decision:'',just:'',form:''};S._addIdx=null;if(!S.pesoManual)redistribute();autosave();keepScroll(render);toast('Labores de otro cargo quitadas.')});return}
   if(act==='restfn'){const i=+t.dataset.i,o=origFn(S.A[i]);if(o!==null){S.A[i].fn=o;autosave();const ta=$('#a'+i+'fn');if(ta)ta.value=o;const b=$('#a'+i+'bd');if(b)b.innerHTML=fnBadge(i)}return}
   if(act==='rmfn'){const i=+t.dataset.i;confirmBox('¿Quitar la función A'+(i+1)+'? Se borran sus notas y observaciones.','Quitar',()=>{Object.assign(S.A[i],{fn:'',ind:'',res:'',a:null,j:null,peso:'',o:'',src:''});if(S._addIdx===i)S._addIdx=null;if(!S.pesoManual)redistribute();autosave();keepScroll(render)});return}
+  if(act==='pickotro'){
+    const cg=CARGOS.find(c=>c.cargo===(S.asc&&S.asc.sel));if(!cg)return;const i=+t.dataset.i,key=cg.cargo+'#'+i;
+    const ex=S.A.slice(A_OWN).find(r=>r.src===key);
+    if(ex){Object.assign(ex,{fn:'',ind:'',res:'',a:null,j:null,peso:'',o:'',src:''})}
+    else{const e=S.A.slice(A_OWN).find(r=>!(r.fn||'').trim());if(!e){toast('Máximo 3 labores de otro cargo.');return}Object.assign(e,{fn:cg.fn[i],src:key})}
+    if(!S.pesoManual)redistribute();
+    autosave();keepScroll(render);return;
+  }
   if(act==='pickfn'){
     const cg=CARGOS.find(c=>c.cargo===S.cargoSel);if(!cg)return;const i=+t.dataset.i,key=cg.cargo+'#'+i;
     const ex=S.A.find(r=>r.src===key);
@@ -1621,6 +1640,7 @@ function onField(e){
     if(v==='__OTRO__'){S.cargoSel='';S._otro=true;S.datos.cargo='';autosave();render();return}
     S._otro=false;S.cargoSel=v;S.datos.cargo=v;autosave();render();return;
   }
+  if(path==='asc.sel'){ensureA(S);const old=S.asc.sel;S.asc.sel=v;if(v&&(!S.asc.cargo||S.asc.cargo===old))S.asc.cargo=v;autosave();keepScroll(render);return}
   if(path==='datos.lugar'&&v==='__NEWLUGAR__'){render();lugarModal();return}
   setPath(path,v);
   if(/^A\.\d\.peso$/.test(path))S.pesoManual=true;
