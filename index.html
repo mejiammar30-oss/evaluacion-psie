@@ -701,7 +701,8 @@ function fmtD(iso){if(!/^\d{4}-\d{2}-\d{2}$/.test(iso||''))return '';const [y,m,
 const f2=x=>x==null?'':(x==='NA'?'N/A':x.toFixed(2).replace('.',','));
 const nt=v=>v==null?'':(v==='NA'?'N/A':String(v).replace('.',','));
 const A_OWN=5,A_ALL=8;
-function ensureA(s){if(!s||!Array.isArray(s.A))return;while(s.A.length<A_ALL)s.A.push({fn:'',ind:'',res:'',a:null,j:null,peso:'',o:'',src:''});if(!s.asc||typeof s.asc!=='object')s.asc={cargo:'',decision:'',just:'',form:''}}
+function fillEr(s){if(!s||!s.firmas||!s.datos)return;if(!(s.firmas.nombreEr||'').trim()&&(s.datos.jefe||'').trim())s.firmas.nombreEr=s.datos.jefe;if(!(s.firmas.cargoEr||'').trim()&&(s.datos.cargoEv||'').trim())s.firmas.cargoEr=s.datos.cargoEv}
+function ensureA(s){fillEr(s);if(!s||!Array.isArray(s.A))return;while(s.A.length<A_ALL)s.A.push({fn:'',ind:'',res:'',a:null,j:null,peso:'',o:'',src:''});if(!s.asc||typeof s.asc!=='object')s.asc={cargo:'',decision:'',just:'',form:''}}
 function newState(){return {v:4,id:uid(),creado:Date.now(),mode:'jefe',asistida:false,
   datos:{nombre:'',cc:'',cargo:'',ingreso:'',lugar:'',mina:'',contrato:'',jefe:'',cargoEv:'',desde:'',hasta:'',fecha:todayISO(),tipo:''},
   cargoSel:'',pesoManual:false,
@@ -1159,7 +1160,7 @@ function printCSS(){return '@page{size:Letter portrait;margin:9mm}*{box-sizing:b
  '.l{background:#FAF6EC;font-weight:bold;width:20%}.c{text-align:center}.t{background:#F0E6C8;font-weight:bold}.hd td{border:1px solid #D2C59F}.logo{width:70px}.sig{height:60px;text-align:center}.sig img{max-height:56px;max-width:100%}.sm{font-size:7pt;color:#555}.res{font-size:11pt;font-weight:bold;text-align:center}.pb{page-break-before:always}'}
 function pHead(){return '<table class="hd"><tr><td class="logo" rowspan="3"><img src="'+LOGO+'" width="66" alt=""></td><td rowspan="3" class="c" style="vertical-align:middle"><b style="font-size:11pt">GESTIÓN DEL TALENTO HUMANO</b><br><b style="font-size:11pt;color:#9C7A29">EVALUACIÓN DE DESEMPEÑO LABORAL</b><br><span class="sm">PSIE INGENIEROS S.A.S. | NIT 901.682.386-1 | Segovia, Antioquia</span></td><td class="l" style="width:24%">CÓDIGO: TH_EVA_01</td></tr><tr><td class="l">FECHA: 26-11-2026</td></tr><tr><td class="l">VERSIÓN: 04</td></tr></table>'}
 function buildPrintBody(E){
-  const c=compute(E), d=E.datos, f=E.firmas, g=(id,k)=>nt((E.r[id]||{})[k]);
+  fillEr(E);const c=compute(E), d=E.datos, f=E.firmas, g=(id,k)=>nt((E.r[id]||{})[k]);
   let h=pHead()+'<h2>1. DATOS GENERALES</h2><table>'+
    [['Nombre del evaluado',d.nombre,'C.C.',d.cc],['Cargo',d.cargo,'Fecha de ingreso',fmtD(d.ingreso)],['Lugar de operación',d.lugar||'','Tipo de contrato',d.contrato],['Mina / frente / área',d.mina],['Jefe inmediato (evaluador)',d.jefe,'Cargo del evaluador',d.cargoEv],['Periodo evaluado',fmtD(d.desde)+' a '+fmtD(d.hasta),'Fecha de la evaluación',fmtD(d.fecha)]].map(r=>r.length===2?'<tr><td class="l">'+r[0]+'</td><td colspan="3">'+esc(r[1])+'</td></tr>':'<tr><td class="l">'+r[0]+'</td><td>'+esc(r[1])+'</td><td class="l">'+r[2]+'</td><td>'+esc(r[3])+'</td></tr>').join('')+
    '<tr><td class="l">Tipo de evaluación</td><td colspan="3">'+esc(d.tipo)+(E.asistida?' &nbsp;|&nbsp; Autoevaluación asistida (el jefe leyó y marcó)':'')+'</td></tr></table>'+
@@ -1201,7 +1202,7 @@ function fechaLarga(iso){if(!/^\d{4}-\d{2}-\d{2}$/.test(iso||''))return '';const
 function buildPDF(E){
   const JS=window.jspdf&&window.jspdf.jsPDF; if(!JS)throw new Error('lib');
   const doc=new JS({unit:'mm',format:'letter',orientation:'portrait',compress:true});
-  const c=compute(E), d=E.datos, f=E.firmas, g=(id,k)=>nt((E.r[id]||{})[k]);
+  fillEr(E);const c=compute(E), d=E.datos, f=E.firmas, g=(id,k)=>nt((E.r[id]||{})[k]);
   const PW=215.9, PH=279.4, ML=12, MR=12, M=ML, TOP=36, BOT=PH-17, W=PW-ML-MR;
   doc.setProperties({title:'Evaluación de desempeño laboral - '+(d.nombre||''),subject:'Evaluación de desempeño laboral TH_EVA_01, versión 04',author:'PSIE Ingenieros S.A.S.',creator:'Formato interactivo de evaluación de desempeño PSIE',keywords:'evaluación de desempeño, talento humano, TH_EVA_01'});
   const DARK=[31,31,31], GOLD=[156,122,41], CREAM=[250,246,236], TINT=[240,230,200], LINE=[210,197,159];
@@ -1663,7 +1664,10 @@ function onField(e){
   }
   if(path==='asc.sel'){ensureA(S);const old=S.asc.sel;S.asc.sel=v;if(v&&(!S.asc.cargo||S.asc.cargo===old))S.asc.cargo=v;autosave();keepScroll(render);return}
   if(path==='datos.lugar'&&v==='__NEWLUGAR__'){render();lugarModal();return}
+  const oldV=(path==='datos.jefe')?S.datos.jefe:(path==='datos.cargoEv')?S.datos.cargoEv:null;
   setPath(path,v);
+  if(path==='datos.jefe'&&(!(S.firmas.nombreEr||'').trim()||S.firmas.nombreEr===oldV))S.firmas.nombreEr=v;
+  if(path==='datos.cargoEv'&&(!(S.firmas.cargoEr||'').trim()||S.firmas.cargoEr===oldV))S.firmas.cargoEr=v;
   if(/^A\.\d\.peso$/.test(path))S.pesoManual=true;
   if(/^A\.\d\.fn$/.test(path)){const i=+path.split('.')[1],b=$('#a'+i+'bd');if(b)b.innerHTML=fnBadge(i);
     if(!S.pesoManual){redistribute();S.A.forEach((r,k)=>{const pi=$('#a'+k+'p');if(pi)pi.value=r.peso===''?'':r.peso})}}
