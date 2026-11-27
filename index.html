@@ -700,10 +700,13 @@ function todayISO(){const d=new Date();return d.getFullYear()+'-'+String(d.getMo
 function fmtD(iso){if(!/^\d{4}-\d{2}-\d{2}$/.test(iso||''))return '';const [y,m,d]=iso.split('-');return d+'/'+m+'/'+y}
 const f2=x=>x==null?'':(x==='NA'?'N/A':x.toFixed(2).replace('.',','));
 const nt=v=>v==null?'':(v==='NA'?'N/A':String(v).replace('.',','));
+const A_OWN=5,A_ALL=8;
+function ensureA(s){if(!s||!Array.isArray(s.A))return;while(s.A.length<A_ALL)s.A.push({fn:'',ind:'',res:'',a:null,j:null,peso:'',o:'',src:''});if(!s.asc||typeof s.asc!=='object')s.asc={cargo:'',decision:'',just:'',form:''}}
 function newState(){return {v:4,id:uid(),creado:Date.now(),mode:'jefe',asistida:false,
   datos:{nombre:'',cc:'',cargo:'',ingreso:'',lugar:'',mina:'',contrato:'',jefe:'',cargoEv:'',desde:'',hasta:'',fecha:todayISO(),tipo:''},
   cargoSel:'',pesoManual:false,
-  A:[0,1,2,3,4].map(()=>({fn:'',ind:'',res:'',a:null,j:null,peso:'',o:'',src:''})),
+  A:[0,1,2,3,4,5,6,7].map(()=>({fn:'',ind:'',res:'',a:null,j:null,peso:'',o:'',src:''})),
+  asc:{cargo:'',decision:'',just:'',form:''},
   r:{}, cierre:{fort:'',mejorar:'',cap:'',acuerdo:'',coment:''},
   plan:[0,1,2,3].map(()=>({aspecto:'',accion:'',resp:'',limite:'',seg:'',cumplio:''})),
   firmas:{modo:'pantalla',evaluado:'',evaluador:'',gh:'',nombreEv:'',ccEv:'',nombreEr:'',cargoEr:'',nombreGh:'',fechaGh:'',testigoNombre:'',testigoCC:'',testigo:''}}}
@@ -806,6 +809,7 @@ function origFn(row){
   const cg=CARGOS.find(c=>c.cargo===m[1]);return cg&&cg.fn[+m[2]]!=null?cg.fn[+m[2]]:null;
 }
 function fnBadge(i){
+  if(i>=A_OWN)return '<i class="ed">Labor de otro cargo</i>';
   const r=S.A[i],o=origFn(r),t=(r.fn||'').trim();
   if(o!==null)return t===o.trim()?'<i>Del perfil del cargo</i>':'<i class="ed">Modificada para este colaborador</i> <button type="button" class="linkbtn" data-act="restfn" data-i="'+i+'" style="padding:0 0 0 6px;font-size:12px">Restaurar original</button>';
   return '<i class="ed">Función propia</i>';
@@ -815,7 +819,7 @@ function aCardHTML(i){
   if(!jefe&&!(row.fn||'').trim())return '';
   const needsEv=jefe&&needEv(row.j)&&!((row.res||'').trim()||(row.o||'').trim());
   const df=jefe&&isNum(row.a)&&isNum(row.j)&&Math.abs(row.a-row.j)>=2;
-  let h='<article class="item'+(needsEv?' flag':'')+'" data-id="'+id+'"><div class="q"><span class="id">'+id+'</span><span>'+(jefe?'Función u objetivo del cargo <span class="fbd" id="a'+i+'bd">'+fnBadge(i)+'</span>':esc(row.fn)+(row.ind?'<br><span class="small">Meta: '+esc(row.ind)+'</span>':''))+'</span></div>';
+  let h='<article class="item'+(needsEv?' flag':'')+'" data-id="'+id+'"><div class="q"><span class="id">'+id+'</span><span>'+(jefe?(i>=A_OWN?'Labor de otro cargo':'Función u objetivo del cargo')+' <span class="fbd" id="a'+i+'bd">'+fnBadge(i)+'</span>':(i>=A_OWN?'<b>Labor de otro cargo:</b> ':'')+esc(row.fn)+(row.ind?'<br><span class="small">Meta: '+esc(row.ind)+'</span>':''))+'</span></div>';
   if(jefe){
     h+='<div class="grid"><div><label class="f" for="a'+i+'fn">Función u objetivo</label><textarea id="a'+i+'fn" rows="3" data-bind="A.'+i+'.fn">'+esc(row.fn)+'</textarea></div>'+
        '<div><label class="f" for="a'+i+'ind">Indicador y meta (opcional)</label><input id="a'+i+'ind" type="text" data-bind="A.'+i+'.ind" value="'+esc(row.ind)+'"></div>'+
@@ -931,7 +935,7 @@ function autoCargo(){
 function pickerHTML(){
   autoCargo();
   const cg=CARGOS.find(c=>c.cargo===S.cargoSel);
-  const used=S.A.filter(r=>(r.fn||'').trim()).length;
+  const used=S.A.slice(0,A_OWN).filter(r=>(r.fn||'').trim()).length;
   let h='<div class="pick"><label class="f" for="cargoSel">Cargo del evaluado (según la Matriz de Cargos y Funciones)</label><select id="cargoSel" data-bind="cargoSel"><option value="">Seleccione el cargo</option>'+cargoOpts(S.cargoSel)+'</select><button type="button" class="linkbtn" data-act="cgnewpick">+ Agregar otro perfil de cargo</button>';
   if(cg){
     h+='<p class="note" style="margin:10px 0 0">Toque las funciones que va a evaluar (mínimo 3, máximo 5). Los pesos se reparten solos y puede cambiarlos. Seleccionadas: <b>'+used+' de 5</b>.</p>';
@@ -949,9 +953,28 @@ function redistribute(){
 function viewA(){
   let h='<h2 class="sec">2. Parte A. Funciones y objetivos del cargo (peso 40 %)</h2>';
   if(S.mode==='colab')h+='<div class="ban">Evaluado: <b>'+esc(S.datos.nombre||'sin nombre')+'</b>. Toque la nota que mejor describe cómo cumple cada función.</div>';
-  else h+='<p class="note">Peso por función: mínimo 10 %, máximo 40 %, suma 100 %. Con nota de 2 o menos, o 5, del jefe, escriba la evidencia.</p>'+pickerHTML()+'<button class="btn gold" data-act="addfn" type="button" style="width:100%;margin-bottom:12px">+ Agregar función propia para este colaborador</button><div class="card" style="padding:10px 14px"><div class="row2"><span>Suma de pesos</span><b id="pesoSum"></b></div></div>'+(S.A.some(r=>(r.fn||'').trim()||r.a!=null||r.j!=null)?'<button class="btn danger" data-act="clearA" type="button" style="width:100%;margin-bottom:12px">Quitar todas las funciones</button>':'');
-  const cards=S.A.map((r,i)=>(S.mode==='jefe'&&!(r.fn||'').trim()&&i!==S._addIdx)?'':aCardHTML(i)).join('');
-  return h+cards+(cards?'':'<p class="note">Aún no hay funciones. Elija las del cargo o agregue una propia.</p>');
+  else h+='<p class="note">Peso por función: mínimo 10 %, máximo 40 %, suma 100 %. Con nota de 2 o menos, o 5, del jefe, escriba la evidencia.</p>'+pickerHTML()+'<button class="btn gold" data-act="addfn" type="button" style="width:100%;margin-bottom:12px">+ Agregar función propia para este colaborador</button><div class="card" style="padding:10px 14px"><div class="row2"><span>Suma de pesos</span><b id="pesoSum"></b></div></div>'+(S.A.slice(0,A_OWN).some(r=>(r.fn||'').trim()||r.a!=null||r.j!=null)?'<button class="btn danger" data-act="clearA" type="button" style="width:100%;margin-bottom:12px">Quitar todas las funciones</button>':'');
+  const jf=S.mode==='jefe';
+  const cards=S.A.slice(0,A_OWN).map((r,i)=>(jf&&!(r.fn||'').trim()&&i!==S._addIdx)?'':aCardHTML(i)).join('');
+  const otroF=S.A.slice(A_OWN).some(r=>(r.fn||'').trim()||r.a!=null||r.j!=null);
+  let o='';
+  if(jf||otroF){
+    o+='<h2 class="sec" style="margin-top:26px">Labores de otro cargo (formación para ascenso)</h2>';
+    if(jf)o+='<p class="note">Úsela cuando el colaborador ejecuta labores de un cargo distinto al suyo y se está capacitando para un ascenso (hasta 3). Estas labores cuentan dentro de la Parte A: los pesos se reparten con las demás funciones y suman 100 %. Al final se registra la recomendación de ascenso.</p><button class="btn gold" data-act="addotro" type="button" style="width:100%;margin-bottom:12px">+ Agregar labor de otro cargo</button>'+(otroF?'<button class="btn danger" data-act="clearotro" type="button" style="width:100%;margin-bottom:12px">Quitar todas las labores de otro cargo</button>':'');
+    o+=S.A.slice(A_OWN).map((r,k)=>{const i=k+A_OWN;return (jf&&!(r.fn||'').trim()&&i!==S._addIdx)?'':aCardHTML(i)}).join('');
+    if(jf&&otroF)o+=ascHTML();
+  }
+  return h+cards+(cards?'':'<p class="note">Aún no hay funciones. Elija las del cargo o agregue una propia.</p>')+o;
+}
+function ascHTML(){
+  const a=S.asc||{},v=x=>esc(x||'');
+  const opts=[['Recomienda','Recomienda el ascenso'],['Condiciones','Recomienda con condiciones'],['No','No recomienda por ahora']];
+  return '<div class="card" id="ascCard"><h3 style="font-size:17px;margin-bottom:8px">Recomendación de ascenso (jefe inmediato)</h3>'+
+   '<label class="f" for="ascC">Cargo al que se propone</label><input id="ascC" type="text" list="ascL" autocomplete="off" data-bind="asc.cargo" value="'+v(a.cargo)+'" placeholder="Ej.: Supervisor de operaciones"><datalist id="ascL">'+CARGOS.map(c=>'<option value="'+esc(c.cargo)+'">').join('')+'</datalist>'+
+   '<label class="f" style="margin-top:10px">Decisión del jefe inmediato</label><div class="radios">'+opts.map(x=>'<label><input type="radio" name="ascD" data-bind="asc.decision" value="'+x[0]+'"'+(a.decision===x[0]?' checked':'')+'> '+x[1]+'</label>').join('')+'</div>'+
+   '<label class="f" for="ascJ" style="margin-top:10px">Justificación (labores realizadas, resultados y conductas que la respaldan)</label><textarea id="ascJ" rows="4" data-bind="asc.just">'+v(a.just)+'</textarea>'+
+   '<label class="f" for="ascF" style="margin-top:10px">Capacitación recibida y formación que falta</label><textarea id="ascF" rows="3" data-bind="asc.form">'+v(a.form)+'</textarea>'+
+   '<p class="small" style="margin:8px 0 0">Es la opinión del jefe inmediato. La decisión del ascenso la toma la empresa según la disponibilidad del cargo y su política.</p></div>';
 }
 function viewB(){
   return '<h2 class="sec">3. Parte B. Seguridad y Salud en el Trabajo (peso 25 %)</h2>'+
@@ -981,6 +1004,8 @@ function viewRes(){
   h+='<div class="card"><h3 style="font-size:16px;margin-bottom:4px">Control de diligenciamiento</h3><p class="small" style="margin:0 0 4px">Toque una alerta para ir al ítem.</p>';
   const al=(arr,txt,cls)=>arr.length?'<button class="alert '+cls+'" data-act="goto" data-id="'+arr[0]+'" type="button"><span>'+txt+'</span><b>'+arr.length+'</b></button>':'<div class="alert ok"><span>'+txt+'</span><b>0</b></div>';
   h+=al(c.evidencia,'Notas de 2 o menos, o 5, sin evidencia escrita','bad')+al(c.diff,'Diferencias de 2 puntos o más entre AUTO y JEFE','warn')+al(c.sin,'Ítems de B y C sin calificar por el jefe','warn');
+  const otroF2=(S.A||[]).slice(A_OWN).some(r=>(r.fn||'').trim());
+  h+=(otroF2&&!(S.asc&&S.asc.decision)?'<button class="alert warn" data-act="gostep" data-s="A" type="button"><span>Falta la recomendación de ascenso del jefe inmediato (Parte A)</span></button>':'');
   const pesoBad=c.sumW>0&&Math.abs(c.sumW-100)>0.0001;
   h+=(pesoBad?'<button class="alert bad" data-act="gostep" data-s="A" type="button"><span>Los pesos de la Parte A suman '+c.sumW+' % y deben sumar 100 %</span></button>':'')+'</div>';
   h+='<div class="card tw"><table class="t"><thead><tr><th>Rango</th><th>Nivel</th></tr></thead><tbody>'+[['4,50 a 5,00','Sobresaliente'],['3,50 a 4,49','Destacado'],['3,00 a 3,49','Cumple'],['2,00 a 2,99','En desarrollo'],['0,50 a 1,99','Deficiente']].map(r=>'<tr><td class="c">'+r[0]+'</td><td><b>'+r[1]+'</b> <span class="small">'+esc(ACTIONS[r[1]])+'</span></td></tr>').join('')+'</tbody></table></div>';
@@ -1050,7 +1075,7 @@ function renderBar(){
   bar.innerHTML='<button class="btn" data-act="prev" type="button"'+(i<=0?' disabled':'')+'>Anterior</button><div class="mid" id="mid">'+mid+'</div><button class="btn pri" data-act="next" type="button"'+(last?' disabled':'')+'>Siguiente</button>';
 }
 function render(){
-  C=compute(S);
+  ensureA(S);C=compute(S);
   $('#homeBtn').hidden=(view==='home');
   $('#modeBtn').textContent=S.mode==='jefe'?'Jefe':'Colaborador';
   $('#modeBtn').classList.toggle('on',S.mode==='colab');
@@ -1090,12 +1115,19 @@ function gotoItem(id){
 
 /* =================== exportes =================== */
 function csvEsc(v){v=String(v==null?'':v);return /[;"\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
-const CSV_HEAD=['id','fecha_evaluacion','nombre','cc','cargo','lugar_operacion','mina_frente_area','tipo_contrato','jefe','cargo_evaluador','tipo_evaluacion','periodo_desde','periodo_hasta','A_auto','A_jefe','B_auto','B_jefe','C_auto','C_jefe','total_auto','total_jefe','nivel','resultado_final','tope_sst_aplicado','nota_1_en_sst','seguimiento','alertas_sin_evidencia','alertas_dif_2_o_mas','items_sin_calificar','acuerdo','autoevaluacion_asistida','firma_evaluado'];
+const CSV_HEAD=['id','fecha_evaluacion','nombre','cc','cargo','lugar_operacion','mina_frente_area','tipo_contrato','jefe','cargo_evaluador','tipo_evaluacion','periodo_desde','periodo_hasta','A_auto','A_jefe','B_auto','B_jefe','C_auto','C_jefe','total_auto','total_jefe','nivel','resultado_final','tope_sst_aplicado','nota_1_en_sst','seguimiento','alertas_sin_evidencia','alertas_dif_2_o_mas','items_sin_calificar','acuerdo','autoevaluacion_asistida','firma_evaluado','otro_cargo_cantidad','ascenso_decision','ascenso_cargo_propuesto'];
 const ITEM_IDS=[...S.A.map((_,i)=>'A'+(i+1)),...ITEMS_B.map(i=>i.id),...COMP.flatMap(c=>c.items.map(i=>i.id))];
+const ASC_TXT={Recomienda:'Recomienda el ascenso',Condiciones:'Recomienda con condiciones',No:'No recomienda por ahora'};
+function hasOtro(E){return (E.A||[]).slice(A_OWN).some(r=>(r.fn||'').trim())}
+function ascPrint(E){
+  if(!hasOtro(E))return '';
+  const a=E.asc||{},br=s=>esc(s||'').replace(/\n/g,'<br>');
+  return '<table><tr><th colspan="2">Recomendación de ascenso (jefe inmediato)</th></tr><tr><td class="l" style="width:30%">Cargo propuesto</td><td>'+esc(a.cargo)+'</td></tr><tr><td class="l">Decisión</td><td>'+esc(ASC_TXT[a.decision]||'')+'</td></tr><tr><td class="l">Justificación</td><td style="height:40px">'+br(a.just)+'</td></tr><tr><td class="l">Capacitación recibida y por recibir</td><td>'+br(a.form)+'</td></tr></table><p class="sm">Es la opinión del jefe inmediato; la decisión del ascenso la toma la empresa según la disponibilidad del cargo y su política. La firma del evaluador al final del documento respalda esta recomendación.</p>';
+}
 function csvRow(E){
   const c=compute(E), d=E.datos, g=(id,k)=>nt((E.r[id]||{})[k]);
-  const base=[E.id,fmtD(d.fecha),d.nombre,d.cc,d.cargo,d.lugar||'',d.mina,d.contrato,d.jefe,d.cargoEv,d.tipo,fmtD(d.desde),fmtD(d.hasta),f2(c.Aa),f2(c.Aj),f2(c.Ba),f2(c.Bj),f2(c.Ca),f2(c.Cj),f2(c.totalAuto),f2(c.total),c.nivel||'',c.final||'',c.capApplied?'Sí':'No',c.sst?'Sí':'No',fmtD(c.seg),c.evidencia.length,c.diff.length,c.sin.length,E.cierre.acuerdo,E.asistida?'Sí':'No',E.firmas.modo];
-  const items=ITEM_IDS.flatMap(id=>/^A\d$/.test(id)?[nt(E.A[+id.slice(1)-1].a),nt(E.A[+id.slice(1)-1].j)]:[g(id,'a'),g(id,'j')]);
+  const base=[E.id,fmtD(d.fecha),d.nombre,d.cc,d.cargo,d.lugar||'',d.mina,d.contrato,d.jefe,d.cargoEv,d.tipo,fmtD(d.desde),fmtD(d.hasta),f2(c.Aa),f2(c.Aj),f2(c.Ba),f2(c.Bj),f2(c.Ca),f2(c.Cj),f2(c.totalAuto),f2(c.total),c.nivel||'',c.final||'',c.capApplied?'Sí':'No',c.sst?'Sí':'No',fmtD(c.seg),c.evidencia.length,c.diff.length,c.sin.length,E.cierre.acuerdo,E.asistida?'Sí':'No',E.firmas.modo,(E.A||[]).slice(A_OWN).filter(r=>(r.fn||'').trim()).length,(E.asc&&E.asc.decision)||'',(E.asc&&E.asc.cargo)||''];
+  const items=ITEM_IDS.flatMap(id=>/^A\d$/.test(id)?[nt((E.A[+id.slice(1)-1]||{}).a),nt((E.A[+id.slice(1)-1]||{}).j)]:[g(id,'a'),g(id,'j')]);
   return base.concat(items);
 }
 const csvHead=()=>CSV_HEAD.concat(ITEM_IDS.flatMap(id=>[id+'_auto',id+'_jefe']));
@@ -1122,8 +1154,8 @@ function buildPrintBody(E){
    '<tr><td class="l">Tipo de evaluación</td><td colspan="3">'+esc(d.tipo)+(E.asistida?' &nbsp;|&nbsp; Autoevaluación asistida (el jefe leyó y marcó)':'')+'</td></tr></table>'+
    '<p class="sm">Escala: 1 Deficiente · 2 En desarrollo · 3 Cumple · 4 Destacado · 5 Sobresaliente · N/A No aplica.</p>';
   h+='<h2>2. PARTE A. CUMPLIMIENTO DE FUNCIONES Y OBJETIVOS DEL CARGO (peso 40 %)</h2><table><tr><th>Función u objetivo</th><th>Indicador y meta</th><th>Resultado / evidencia</th><th>AUTO</th><th>JEFE</th><th>Peso</th><th>Observaciones</th></tr>'+
-   E.A.map((r,i)=>(r.fn||r.ind||r.res||r.a!=null||r.j!=null)?'<tr><td>A'+(i+1)+'. '+esc(r.fn)+'</td><td>'+esc(r.ind)+'</td><td>'+esc(r.res)+'</td><td class="c">'+nt(r.a)+'</td><td class="c">'+nt(r.j)+'</td><td class="c">'+(r.peso!==''?esc(r.peso)+' %':'')+'</td><td>'+esc(r.o)+'</td></tr>':'').join('')+
-   '<tr class="t"><td colspan="3">Promedio ponderado Parte A</td><td class="c">'+f2(c.Aa)+'</td><td class="c">'+f2(c.Aj)+'</td><td class="c">'+c.sumW+' %</td><td></td></tr></table>';
+   E.A.map((r,i)=>(r.fn||r.ind||r.res||r.a!=null||r.j!=null)?'<tr><td>'+(i>=A_OWN?'<b>Otro cargo</b> ':'')+'A'+(i+1)+'. '+esc(r.fn)+'</td><td>'+esc(r.ind)+'</td><td>'+esc(r.res)+'</td><td class="c">'+nt(r.a)+'</td><td class="c">'+nt(r.j)+'</td><td class="c">'+(r.peso!==''?esc(r.peso)+' %':'')+'</td><td>'+esc(r.o)+'</td></tr>':'').join('')+
+   '<tr class="t"><td colspan="3">Promedio ponderado Parte A</td><td class="c">'+f2(c.Aa)+'</td><td class="c">'+f2(c.Aj)+'</td><td class="c">'+c.sumW+' %</td><td></td></tr></table>'+ascPrint(E);
   h+='<h2>3. PARTE B. SEGURIDAD Y SALUD EN EL TRABAJO (peso 25 %)</h2><table><tr><th style="width:52%">Aspecto a evaluar</th><th>AUTO</th><th>JEFE</th><th>Observaciones / evidencia</th></tr>'+
    ITEMS_B.map(i=>'<tr><td>'+i.id+'. '+esc(i.t)+(CRIT.includes(i.id)?' <b>[CRÍTICO]</b>':'')+'</td><td class="c">'+g(i.id,'a')+'</td><td class="c">'+g(i.id,'j')+'</td><td>'+esc((E.r[i.id]||{}).o)+'</td></tr>').join('')+
    '<tr class="t"><td>Promedio de la sección B</td><td class="c">'+f2(c.Ba)+'</td><td class="c">'+f2(c.Bj)+'</td><td></td></tr></table>';
@@ -1187,12 +1219,15 @@ function buildPDF(E){
 
   /* 2 parte A */
   H('2. PARTE A. CUMPLIMIENTO DE FUNCIONES Y OBJETIVOS DEL CARGO (peso 40 %)');
-  const rowsA=E.A.map((r,i)=>(r.fn||r.ind||r.res||r.a!=null||r.j!=null)?['A'+(i+1)+'. '+r.fn,r.ind,r.res,nt(r.a),nt(r.j),r.peso!==''?r.peso+' %':'',r.o]:null).filter(Boolean);
+  const rowsA=E.A.map((r,i)=>(r.fn||r.ind||r.res||r.a!=null||r.j!=null)?['A'+(i+1)+'. '+(i>=A_OWN?'[OTRO CARGO] ':'')+r.fn,r.ind,r.res,nt(r.a),nt(r.j),r.peso!==''?r.peso+' %':'',r.o]:null).filter(Boolean);
   tbl({head:[['Función u objetivo','Indicador y meta','Resultado / evidencia','AUTO','JEFE','Peso','Observaciones']],
     body:rowsA.length?rowsA:[['','','','','','','']],
     foot:[[{content:'Promedio ponderado Parte A (nota JEFE × peso)',colSpan:3},f2(c.Aa),f2(c.Aj),c.sumW+' %','']],
     footStyles:{fillColor:TINT,textColor:[20,20,20],fontStyle:'bold',halign:'center'},
     columnStyles:{0:{cellWidth:50},1:{cellWidth:28},2:{cellWidth:34},3:{cellWidth:12,halign:'center'},4:{cellWidth:12,halign:'center'},5:{cellWidth:12,halign:'center'}},showFoot:'lastPage'});
+  if(hasOtro(E)){const a=E.asc||{};room(50);
+    tbl({head:[[{content:'Recomendación de ascenso (jefe inmediato)',colSpan:2}]],body:[['Cargo propuesto',a.cargo||' '],['Decisión',ASC_TXT[a.decision]||' '],['Justificación',a.just||' '],['Capacitación recibida y por recibir',a.form||' ']],columnStyles:{0:{cellWidth:48,fontStyle:'bold'},1:{cellWidth:W-48}}});
+    note('Es la opinión del jefe inmediato; la decisión del ascenso la toma la empresa según la disponibilidad del cargo y su política. La firma del evaluador respalda esta recomendación.');}
 
   /* 3 parte B */
   H('3. PARTE B. SEGURIDAD Y SALUD EN EL TRABAJO (peso 25 %)');
@@ -1516,20 +1551,27 @@ document.addEventListener('click',e=>{
     autosave();rerenderCard(id);refreshLive();if(view!=='home'&&step==='res')render();return;
   }
   if(act==='chip'){const ta=t.closest('.obs').querySelector('textarea');ta.value=(ta.value?ta.value.replace(/\s+$/,'')+'. ':'')+t.dataset.t+': ';ta.dispatchEvent(new Event('input',{bubbles:true}));ta.focus();return}
-  if(act==='clearA'){confirmBox('¿Quitar todas las funciones de la Parte A? Se borran también sus notas, indicadores y observaciones. Esta acción no se puede deshacer.','Quitar todas',()=>{S.A.forEach(r=>Object.assign(r,{fn:'',ind:'',res:'',a:null,j:null,peso:'',o:'',src:''}));S.pesoManual=false;S._showEmpty=false;S._obs={};autosave();keepScroll(render);toast('Funciones quitadas.')});return}
+  if(act==='clearA'){confirmBox('¿Quitar todas las funciones de la Parte A? Se borran también sus notas, indicadores y observaciones. Esta acción no se puede deshacer.','Quitar todas',()=>{S.A.slice(0,A_OWN).forEach(r=>Object.assign(r,{fn:'',ind:'',res:'',a:null,j:null,peso:'',o:'',src:''}));S.pesoManual=false;S._showEmpty=false;S._obs={};redistribute();autosave();keepScroll(render);toast('Funciones quitadas.')});return}
   if(act==='addfn'){
-    let k=S.A.findIndex(r=>!(r.fn||'').trim()&&!r.src&&r.a==null&&r.j==null);
-    if(S._addIdx!=null&&!(S.A[S._addIdx].fn||'').trim())k=S._addIdx;
+    let k=S.A.slice(0,A_OWN).findIndex(r=>!(r.fn||'').trim()&&!r.src&&r.a==null&&r.j==null);
+    if(S._addIdx!=null&&S._addIdx<A_OWN&&!(S.A[S._addIdx].fn||'').trim())k=S._addIdx;
     if(k<0){toast('Máximo 5 funciones. Quite una para agregar otra.',4000);return}
     S._addIdx=k;render();const ta=$('#a'+k+'fn');if(ta){ta.focus();ta.scrollIntoView({block:'center'})}return;
   }
+  if(act==='addotro'){
+    let k=S.A.findIndex((r,ix)=>ix>=A_OWN&&!(r.fn||'').trim()&&!r.src&&r.a==null&&r.j==null);
+    if(S._addIdx!=null&&S._addIdx>=A_OWN&&!(S.A[S._addIdx].fn||'').trim())k=S._addIdx;
+    if(k<0){toast('Máximo 3 labores de otro cargo. Quite una para agregar otra.',4000);return}
+    S._addIdx=k;render();const ta=$('#a'+k+'fn');if(ta){ta.focus();ta.scrollIntoView({block:'center'})}return;
+  }
+  if(act==='clearotro'){confirmBox('¿Quitar todas las labores de otro cargo? Se borran sus notas, observaciones y la recomendación de ascenso. Esta acción no se puede deshacer.','Quitar todas',()=>{S.A.slice(A_OWN).forEach(r=>Object.assign(r,{fn:'',ind:'',res:'',a:null,j:null,peso:'',o:'',src:''}));S.asc={cargo:'',decision:'',just:'',form:''};S._addIdx=null;if(!S.pesoManual)redistribute();autosave();keepScroll(render);toast('Labores de otro cargo quitadas.')});return}
   if(act==='restfn'){const i=+t.dataset.i,o=origFn(S.A[i]);if(o!==null){S.A[i].fn=o;autosave();const ta=$('#a'+i+'fn');if(ta)ta.value=o;const b=$('#a'+i+'bd');if(b)b.innerHTML=fnBadge(i)}return}
   if(act==='rmfn'){const i=+t.dataset.i;confirmBox('¿Quitar la función A'+(i+1)+'? Se borran sus notas y observaciones.','Quitar',()=>{Object.assign(S.A[i],{fn:'',ind:'',res:'',a:null,j:null,peso:'',o:'',src:''});if(S._addIdx===i)S._addIdx=null;if(!S.pesoManual)redistribute();autosave();keepScroll(render)});return}
   if(act==='pickfn'){
     const cg=CARGOS.find(c=>c.cargo===S.cargoSel);if(!cg)return;const i=+t.dataset.i,key=cg.cargo+'#'+i;
     const ex=S.A.find(r=>r.src===key);
     if(ex){Object.assign(ex,{fn:'',ind:'',res:'',a:null,j:null,peso:'',o:'',src:''})}
-    else{const e=S.A.find(r=>!(r.fn||'').trim());if(!e){toast('Máximo 5 funciones.');return}Object.assign(e,{fn:cg.fn[i],src:key})}
+    else{const e=S.A.slice(0,A_OWN).find(r=>!(r.fn||'').trim());if(!e){toast('Máximo 5 funciones.');return}Object.assign(e,{fn:cg.fn[i],src:key})}
     if(!S.pesoManual)redistribute();
     autosave();keepScroll(render);return;
   }
