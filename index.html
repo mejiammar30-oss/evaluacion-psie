@@ -864,7 +864,7 @@ function viewHome(){
     h+='<div class="li"><div class="nm"><b>'+esc(e.datos.nombre||'Sin nombre')+'</b><span class="small">'+esc(e.datos.cargo||'')+' · '+esc(fmtD(e.datos.fecha))+' · '+(c.final?esc(c.final)+' ('+f2(c.total)+')':'sin resultado')+'</span></div>'+
        '<div class="btnrow" style="flex:0 0 auto"><button class="btn sm" data-act="open" data-id="'+e.id+'" type="button">Abrir</button><button class="btn sm danger" data-act="del" data-id="'+e.id+'" type="button">Borrar</button></div></div>'});
   h+='</div><div class="tl">'+(list.length?'<button class="linkbtn" data-act="csvall" type="button">Descargar todas (CSV)</button>':'')+
-     '<label class="linkbtn" for="imp" style="cursor:pointer">Cargar evaluaciones al historial (.json)</label><input id="imp" type="file" accept=".json,application/json" multiple hidden></div></section>';
+     '<button class="linkbtn" data-act="bkp" type="button">Copia de seguridad (.json)</button><label class="linkbtn" for="imp" style="cursor:pointer">Cargar evaluaciones o copia de seguridad (.json)</label><input id="imp" type="file" accept=".json,application/json" multiple hidden></div></section>';
   h+='</div><div class="hcol hr"><section class="mv"><h2 class="lbl">Misión</h2><p>Ofrecer un servicio de alta calidad en Ingeniería y Gestión de Proyectos, con base en nuestros principios de integridad y profesionalismo. Estamos comprometidos en entregar soluciones innovadoras y con costos competitivos, excediendo las necesidades y expectativas de nuestros clientes en los sectores de obra civil, metalmecánica e industrial.</p>'+
      '<h2 class="lbl" style="margin-top:26px">Visión</h2><p>Para el año 2028, ser una empresa líder en el desarrollo de soluciones para la industria metalmecánica, civil y minera, destacándonos por la experiencia de nuestro personal y el cumplimiento de estándares de manufactura, calidad, seguridad industrial, seguridad y salud en el trabajo y responsabilidad ambiental.</p></section></div></div>';
   h+='<nav class="aj" aria-label="Ajustes"><button type="button" data-act="cgmenu">Perfiles de cargo</button><button type="button" data-act="pinmenu">Clave de acceso'+(pinCfg()?' · activa':'')+'</button><button type="button" data-act="help">Instrucciones y escala</button></nav>';
@@ -1557,6 +1557,7 @@ document.addEventListener('click',e=>{
   if(act==='dlhtml'){saveFile(fname('html'),printDoc(S),'text/html');return}
   if(act==='dlcsv'){saveFile(fname('csv'),buildCSV([S]),'text/csv');return}
   if(act==='csvall'){saveFile('Evaluaciones_PSIE_'+todayISO()+'.csv',buildCSV(lsGet(K_LIST)||[]),'text/csv');return}
+  if(act==='bkp'){const l=lsGet(K_LIST)||[];saveFile('Copia_seguridad_PSIE_'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify({psie_backup:1,version:4,fecha:new Date().toISOString(),evaluaciones:l,cargos:customCargos(),lugares:lugaresCustom(),correos:lsGet(K_MAIL)||[]}),'application/json');return}
   if(act==='dljson'){try{const l=lsGet(K_LIST)||[];const i=l.findIndex(y=>y.id===S.id);S.modificado=Date.now();if(i>=0)l[i]=S;else l.push(S);lsSet(K_LIST,l)}catch(err){}saveFile(fname('json'),JSON.stringify(S),'application/json');return}
   if(act==='copyjson'){try{navigator.clipboard.writeText(JSON.stringify(S)).then(()=>toast('Datos copiados. Péguelos en un mensaje o archivo.')).catch(()=>toast('No se pudo copiar.'))}catch(err){toast('No se pudo copiar.')}return}
 });
@@ -1721,7 +1722,12 @@ document.addEventListener('change',e=>{
   if(e.target.dataset&&e.target.dataset.sigfile){loadSigImage(e.target.dataset.sigfile,e.target.files&&e.target.files[0]);e.target.value='';return}
   if(e.target.id==='imp'){const fs=[...(e.target.files||[])];e.target.value='';if(!fs.length)return;
     Promise.all(fs.map(f=>new Promise(res=>{const rd=new FileReader();rd.onload=()=>{try{const o=JSON.parse(rd.result);res(Array.isArray(o)?o:[o])}catch(x){res([])}};rd.onerror=()=>res([]);rd.readAsText(f)}))).then(parts=>{
-      const ev=[].concat(...parts).filter(o=>o&&o.datos&&o.A&&o.id);
+      const all=[].concat(...parts),bk=all.filter(o=>o&&o.psie_backup);
+      let ev=all.filter(o=>o&&o.datos&&o.A&&o.id);
+      bk.forEach(b=>{ev=ev.concat((b.evaluaciones||[]).filter(o=>o&&o.datos&&o.A&&o.id));
+        if(Array.isArray(b.cargos)&&b.cargos.length){const cur=customCargos();b.cargos.forEach(c=>{if(c&&c.cargo&&Array.isArray(c.fn)){const i=cur.findIndex(x=>x.cargo===c.cargo);if(i>=0)cur[i]=c;else cur.push(c)}});lsSet(K_CARGOS,cur);refreshCargos()}
+        if(Array.isArray(b.lugares)){const cur=lugaresCustom();b.lugares.forEach(x=>{if(typeof x==='string'&&x.trim()&&!cur.includes(x))cur.push(x)});lsSet(K_LUGARES,cur)}
+        if(Array.isArray(b.correos)&&b.correos.length){lsSet(K_MAIL,b.correos);MAILS=null}});
       if(!ev.length){toast('El archivo no es una evaluación válida.');return}
       const l=lsGet(K_LIST)||[];let nuevas=0,act=0;
       ev.forEach(o=>{const i=l.findIndex(y=>y.id===o.id);if(i>=0){l[i]=o;act++}else{l.push(o);nuevas++}});
