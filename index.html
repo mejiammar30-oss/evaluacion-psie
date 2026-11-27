@@ -1344,7 +1344,7 @@ function mailCard(){
   return '<div class="card"><h3 style="font-size:16px;margin-bottom:4px">Enviar por correo</h3><p class="small" style="margin:0 0 6px">Marque los destinatarios de este envío. La lista queda guardada en este dispositivo.</p>'+
    (L.length?L.map((m,i)=>'<div class="mrow"><input type="checkbox" data-act="mailtog" data-i="'+i+'"'+(m.on?' checked':'')+' aria-label="Incluir '+esc(m.email)+'"><span class="em">'+esc(m.email)+'</span><button type="button" data-act="maildel" data-i="'+i+'" aria-label="Quitar '+esc(m.email)+'">✕</button></div>').join(''):'<p class="note">No hay destinatarios. Agregue al menos uno.</p>')+
    '<div class="addm"><input type="text" id="mailNew" inputmode="email" autocomplete="off" placeholder="Agregar correo (puede pegar varios)"><button class="btn" data-act="mailadd" type="button" style="min-height:44px">Agregar</button></div>'+
-   '<div class="btnrow" style="margin-top:10px"><button class="btn gold" data-act="mailsend" type="button">Enviar evaluación por correo</button><button class="btn" data-act="mailreset" type="button">Restablecer lista</button></div>'+
+   '<div class="btnrow" style="margin-top:10px">'+(SES?'<button class="btn pri" data-act="mailauto" type="button">Enviar ahora con el PDF adjunto</button>':'')+'<button class="btn gold" data-act="mailsend" type="button">'+(SES?'Enviar desde mi correo':'Enviar evaluación por correo')+'</button><button class="btn" data-act="mailreset" type="button">Restablecer lista</button></div>'+
    '<p class="small" style="margin-top:8px">Envíe estos datos únicamente a correos de la empresa autorizados (Ley 1581 de 2012).</p></div>';
 }
 function mailParts(){
@@ -1354,6 +1354,23 @@ function mailParts(){
   return {to,subject,body};
 }
 function copyTxt(t,msg){try{navigator.clipboard.writeText(t).then(()=>toast(msg)).catch(()=>toast('No se pudo copiar.'))}catch(e){toast('No se pudo copiar.')}}
+async function mailAuto(btn){
+  const p=mailParts();
+  if(!p.to.length){toast('Marque o agregue al menos un destinatario.');return}
+  if(!SES){toast('Inicie sesión para el envío automático.');return}
+  if(btn&&btn.disabled)return;
+  const old=btn?btn.textContent:'';if(btn){btn.disabled=true;btn.textContent='Enviando…'}
+  try{
+    const b=buildPDF(S);
+    const blob=b instanceof Blob?b:new Blob([b],{type:'application/pdf'});
+    const b64=await new Promise((ok,no)=>{const fr=new FileReader();fr.onload=()=>ok(String(fr.result).split(',')[1]||'');fr.onerror=()=>no(fr.error);fr.readAsDataURL(blob)});
+    const tk=await tok();
+    const r=await sbReq('/functions/v1/enviar_correo',{method:'POST',headers:sbH(tk),body:JSON.stringify({to:p.to,subject:p.subject,body:p.body,filename:fname('pdf'),pdf:b64})});
+    if(r.ok&&r.data&&r.data.ok){toast('Correo enviado a '+r.data.enviados+' destinatario'+(r.data.enviados===1?'':'s')+' con el PDF adjunto.',5000)}
+    else{const m=(r.data&&r.data.error)||('Error '+r.status);modal('<p style="margin:0 0 8px;font-size:16px"><b>No se pudo enviar el correo</b></p><p style="margin:0 0 14px;font-size:15px">'+esc(m)+'</p><div class="btnrow"><button class="btn" data-act="closemodal" type="button">Cerrar</button><button class="btn gold" data-act="mailsend" type="button">Enviar desde mi correo</button></div>')}
+  }catch(e){toast('No se pudo enviar. Revise la conexión e intente de nuevo.',5000)}
+  if(btn){btn.disabled=false;btn.textContent=old}
+}
 function mailSend(){
   mailManual();
 }
@@ -1388,6 +1405,7 @@ function mailClick(act,t){
   }
   if(act==='mailreset'){confirmBox('¿Restablecer la lista a los destinatarios iniciales?','Restablecer',()=>{MAILS=MAIL_DEF.map(x=>({...x}));saveMails();keepScroll(render)});return true}
   if(act==='mailsend'){mailSend();return true}
+  if(act==='mailauto'){mailAuto(t);return true}
   if(act==='mailmanual'){closeModal();mailManual();return true}
   if(act==='mailshare'){if(MAILCTX&&MAILCTX.file)navigator.share({files:[MAILCTX.file],title:MAILCTX.p.subject,text:MAILCTX.p.body}).catch(()=>{});return true}
   if(act==='cpto'){copyTxt(MAILCTX.p.to.join(', '),'Destinatarios copiados.');return true}
