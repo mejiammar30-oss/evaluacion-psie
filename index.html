@@ -1053,7 +1053,7 @@ function viewFirmas(){
   h+=padBlock('gh','Vo. Bo. Gestión Humana','nombreGh','Nombre','fechaGh','Fecha de recibido');
   if(f.modo==='huella'||f.modo==='niega')h+=padBlock('testigo','Testigo (solo si el evaluado no firma)','testigoNombre','Nombre del testigo','testigoCC','C.C.');
   h+='<p class="small">Constancia: la firma del evaluado indica que conoció el contenido y el resultado de la evaluación. No implica aceptación. Si el evaluado se niega a firmar, se deja constancia con la firma de un testigo. Confirme con su asesor jurídico el uso de la firma en pantalla.</p>';
-  h+='<div class="card"><button class="btn pri" data-act="pdf" type="button" style="width:100%">Generar PDF con toda la información</button><button class="btn" data-act="dljson" type="button" style="width:100%;margin-top:8px">Guardar evaluación (.json)</button><p class="small" style="margin:8px 0 0">El archivo .json permite abrir y continuar esta evaluación después, desde Inicio.</p></div>';
+  h+='<div class="card"><button class="btn pri" data-act="pdf" type="button" style="width:100%">Generar PDF con toda la información</button><button class="btn" data-act="dljson" type="button" style="width:100%;margin-top:8px">Guardar evaluación</button><p class="small" style="margin:8px 0 0">Queda en el historial de Inicio, desde donde puede abrirla y continuar después.</p></div>';
   h+=mailCard();
   h+='<div class="card"><button class="btn danger" data-act="home" type="button" style="width:100%">Terminar y volver al inicio</button><button class="btn" data-act="delcur" type="button" style="width:100%;margin-top:8px;color:var(--bad);border-color:var(--bad)">Eliminar esta evaluación</button><p class="small" style="margin:8px 0 0">Borra la evaluación del historial de este dispositivo y de la nube. No se puede deshacer; descargue antes el .json si quiere conservar una copia.</p></div>';
   return h;
@@ -1646,7 +1646,7 @@ document.addEventListener('click',e=>{
   if(act==='dlcsv'){saveFile(fname('csv'),buildCSV([S]),'text/csv');return}
   if(act==='csvall'){saveFile('Evaluaciones_PSIE_'+todayISO()+'.csv',buildCSV(lsGet(K_LIST)||[]),'text/csv');return}
   if(act==='bkp'){const l=lsGet(K_LIST)||[];saveFile('Copia_seguridad_PSIE_'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify({psie_backup:1,version:4,fecha:new Date().toISOString(),evaluaciones:l,cargos:customCargos(),lugares:lugaresCustom(),correos:lsGet(K_MAIL)||[]}),'application/json');return}
-  if(act==='dljson'){try{const l=lsGet(K_LIST)||[];const i=l.findIndex(y=>y.id===S.id);S.modificado=Date.now();if(i>=0)l[i]=S;else l.push(S);lsSet(K_LIST,l)}catch(err){}saveFile(fname('json'),JSON.stringify(S),'application/json');toast('Evaluación guardada en el historial y archivo .json descargado.',4000);return}
+  if(act==='dljson'){try{const l=lsGet(K_LIST)||[];const i=l.findIndex(y=>y.id===S.id);S.modificado=Date.now();if(i>=0)l[i]=S;else l.push(S);lsSet(K_LIST,l)}catch(err){}toast(lsGet(K_LIST)?'Evaluación guardada en el historial.':'Este navegador no permite guardar.',4000);return}
   if(act==='copyjson'){try{navigator.clipboard.writeText(JSON.stringify(S)).then(()=>toast('Datos copiados. Péguelos en un mensaje o archivo.')).catch(()=>toast('No se pudo copiar.'))}catch(err){toast('No se pudo copiar.')}return}
 });
 function keepScroll(fn){const y=window.scrollY;fn();window.scrollTo(0,y)}
